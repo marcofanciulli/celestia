@@ -1,0 +1,13 @@
+[submodule "libraries/libpng"]
+	path = libraries/libpng
+	url = https://github.com/jherico/libpng.git
+
+[submodule "libraries/zlib"]
+	path = libraries/zlib
+	url = https://github.com/jherico/zlib.git
+[submodule "libraries/cspice"]
+	path = libraries/cspice
+	url = git@github.com:jherico/cspice.git
+[submodule "libraries/glew"]
+	path = libraries/glew
+	url = https://github.com/jherico/glew
