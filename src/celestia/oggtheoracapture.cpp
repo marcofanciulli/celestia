@@ -1,6 +1,6 @@
 /*
  *  Copyright (C) 2006, William K Volkman <wkvsf@users.sourceforge.net>
- * 
+ *
  *  This program is free software; you can redistribute it and/or
  *  modify it under the terms of the GNU General Public License
  *  as published by the Free Software Foundation; either version 2
@@ -12,7 +12,7 @@
  * Ecb = 0.564(B - Ey) = -0.169R-0.331G+0.500B
  *
  * the defined range for Y is [16,235] (220 steps) and the valid ranges
- * for Cr and Cb are [16,239] (235 steps) 
+ * for Cr and Cb are [16,239] (235 steps)
  *
  * http://www.neuro.sfc.keio.ac.jp/~aly/polygon/info/color-space-faq.html
  *  RGB -> YUV                    | YUV -> RGB
@@ -43,7 +43,7 @@
  * V := min(abs(r * 3598 + g * -3013 + b * -585 + 4096 + 1048576) >> 13,240)
  */
 
-
+#if 0
 #ifndef _GNU_SOURCE
 # define _GNU_SOURCE
 #endif
@@ -127,7 +127,7 @@ void OggTheoraCapture::setAspectRatio(int aspect_numerator, int aspect_denominat
     if (a > 1) {
         video_an = aspect_numerator / a;
         video_ad = aspect_denominator / a;
-    } 
+    }
     else
     {
         video_an = aspect_numerator;
@@ -144,7 +144,7 @@ void OggTheoraCapture::setQuality(float quality)
         video_q = (int)ceil(quality * 6.3);
     else
         video_q = (int)ceil(quality);
-    
+
 }
 bool OggTheoraCapture::start(const std::string& filename,
                  int w, int h,
@@ -380,7 +380,7 @@ bool OggTheoraCapture::captureFrame()
         unsigned char * uout = yuv.u;
         unsigned char * vin0 = yuv.v;
         unsigned char * vin1 = yuv.v + video_x;
-        unsigned char * vout = yuv.v; 
+        unsigned char * vout = yuv.v;
         for (int y = 0; y < video_y; y += 2)
         {
             for (int x = 0; x < video_x; x += 2)
@@ -507,3 +507,4 @@ OggTheoraCapture::~OggTheoraCapture()
     cleanup();
 }
 
+#endif

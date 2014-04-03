@@ -11,3 +11,6 @@
 [submodule "libraries/glew"]
 	path = libraries/glew
 	url = https://github.com/jherico/glew
+[submodule "libraries/glfw"]
+	path = libraries/glfw
+	url = https://github.com/jherico/glfw.git
