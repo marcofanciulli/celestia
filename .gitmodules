@@ -1,22 +1,27 @@
-[submodule "libraries/libpng"]
-	path = libraries/libpng
-	url = https://github.com/jherico/libpng.git
-
-[submodule "libraries/zlib"]
-	path = libraries/zlib
-	url = https://github.com/jherico/zlib.git
 [submodule "libraries/cspice"]
 	path = libraries/cspice
 	url = git@github.com:jherico/cspice.git
+[submodule "libraries/gl"]
+	path = libraries/gl
+	url = https://github.com/jherico/gl
 [submodule "libraries/glew"]
 	path = libraries/glew
 	url = https://github.com/jherico/glew
 [submodule "libraries/glfw"]
 	path = libraries/glfw
 	url = https://github.com/jherico/glfw.git
-[submodule "libraries/gl"]
-	path = libraries/gl
-	url = https://github.com/jherico/gl
 [submodule "libraries/glm"]
 	path = libraries/glm
 	url = git@github.com:g-truc/glm.git
+[submodule "libraries/libjpeg"]
+	path = libraries/libjpeg
+	url = git@github.com:LuaDist/libjpeg.git
+[submodule "libraries/libpng"]
+	path = libraries/libpng
+	url = https://github.com/jherico/libpng.git
+[submodule "libraries/zlib"]
+	path = libraries/zlib
+	url = https://github.com/jherico/zlib.git
+[submodule "libraries/lua"]
+	path = libraries/lua
+	url = git@github.com:LuaDist/lua.git
