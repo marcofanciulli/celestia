@@ -130,5 +130,7 @@ else()
     list(APPEND SHARED_LIBS ${PNG_LIBRARIES})
 endif()
 
+include_directories(${CMAKE_SOURCE_DIR}/libraries/glm)
+include_directories(${CMAKE_SOURCE_DIR}/libraries/gl)
 add_subdirectory(src)
 

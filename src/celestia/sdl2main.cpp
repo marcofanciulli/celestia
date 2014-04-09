@@ -273,7 +273,6 @@ int main(int argc, char* argv[]) {
   localtime(&curtime); // Only doing this to set timezone as a side effect
   appCore->setTimeZoneBias(-timezone);
   appCore->setTimeZoneName(tzname[daylight ? 0 : 1]);
-  appCore->splitView(View::VerticalSplit);
 
   if (startfile == 1) {
     if (argv[argc - 1][0] == '-') {

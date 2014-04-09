@@ -137,8 +137,8 @@ class Renderer
         I18nConstellationLabels = 0x800,
         DwarfPlanetLabels   = 0x1000,
         MinorMoonLabels     = 0x2000,
-		GlobularLabels      = 0x4000,		        
-		BodyLabelMask       = (PlanetLabels | DwarfPlanetLabels | MoonLabels | MinorMoonLabels | AsteroidLabels | SpacecraftLabels | CometLabels),	   
+		GlobularLabels      = 0x4000,
+		BodyLabelMask       = (PlanetLabels | DwarfPlanetLabels | MoonLabels | MinorMoonLabels | AsteroidLabels | SpacecraftLabels | CometLabels),
 	};
 
     enum {
@@ -172,7 +172,7 @@ class Renderer
         ShowTintedIllumination = 0x4000000,
     };
 
-    enum StarStyle 
+    enum StarStyle
     {
         FuzzyPointStars  = 0,
         PointStars       = 1,
@@ -184,7 +184,7 @@ class Renderer
     static const int DefaultRenderFlags = Renderer::ShowStars          |
                                           Renderer::ShowPlanets        |
                                           Renderer::ShowGalaxies       |
-										  Renderer::ShowGlobulars      |	 
+										  Renderer::ShowGlobulars      |
                                           Renderer::ShowCloudMaps      |
                                           Renderer::ShowAtmospheres    |
                                           Renderer::ShowEclipseShadows |
@@ -247,14 +247,14 @@ class Renderer
         AlignLeft,
         AlignRight
     };
-    
+
     enum LabelVerticalAlignment
     {
         VerticalAlignCenter,
         VerticalAlignBottom,
         VerticalAlignTop,
     };
-        
+
     static const int MaxLabelLength = 48;
     struct Annotation
     {
@@ -268,7 +268,7 @@ class Renderer
 
         bool operator<(const Annotation&) const;
     };
-        
+
     void addForegroundAnnotation(const MarkerRepresentation* markerRep,
                                  const std::string& labelText,
                                  Color color,
@@ -298,12 +298,12 @@ class Renderer
     void endObjectAnnotations();
     Eigen::Quaternionf getCameraOrientation() const;
     float getNearPlaneDistance() const;
-    
+
     void clearAnnotations(std::vector<Annotation>&);
 	void clearSortedAnnotations();
 
     void invalidateOrbitCache();
-    
+
     struct OrbitPathListEntry
     {
         float centerZ;
@@ -314,7 +314,7 @@ class Renderer
         float opacity;
 
         bool operator<(const OrbitPathListEntry&) const;
-    };        
+    };
 
     enum FontStyle
     {
@@ -322,7 +322,7 @@ class Renderer
         FontLarge  = 1,
         FontCount  = 2,
     };
-    
+
     void setFont(FontStyle, TextureFont*);
     TextureFont* getFont(FontStyle) const;
 
@@ -336,7 +336,7 @@ class Renderer
  public:
     // Internal types
     // TODO: Figure out how to make these private.  Even with a friend
-    // 
+    //
     struct Particle
     {
         Eigen::Vector3f center;
@@ -417,7 +417,7 @@ class Renderer
 
     typedef ObjectLabel<Star>          StarLabel;
     typedef ObjectLabel<DeepSkyObject> DSOLabel;    // currently not used
-    
+
     struct DepthBufferPartition
     {
         int index;
@@ -489,7 +489,7 @@ class Renderer
                     const Eigen::Quaternionf& orientation,
                     double now,
                     float, float);
-    
+
     void renderReferenceMark(const ReferenceMark& refMark,
                              const Eigen::Vector3f& pos,
                              float distance,
@@ -531,8 +531,8 @@ class Renderer
     void renderLocations(const Body& body,
                          const Eigen::Vector3d& bodyPosition,
                          const Eigen::Quaterniond& bodyOrientation);
-                   
-    // Render an item from the render list                   
+
+    // Render an item from the render list
     void renderItem(const RenderListEntry& rle,
                     const Observer& observer,
                     const Eigen::Quaternionf& cameraOrientation,
@@ -549,8 +549,8 @@ class Renderer
                              const Observer& observer);
     void renderParticles(const std::vector<Particle>& particles,
                          const Eigen::Quaternionf& orientation);
-    
-    
+
+
     void addAnnotation(std::vector<Annotation>&,
                        const MarkerRepresentation*,
                        const std::string& labelText,
@@ -584,12 +584,18 @@ class Renderer
                      float nearDist,
                      float farDist);
 
+    int sceneTexWidth, sceneTexHeight;
+//    GLuint sceneTexture;
+    void drawSceneTexture();
+    void genSceneTexture();
+    void renderToTexture(const Observer& observer,
+                         const Universe& universe,
+                         float faintestMagNight,
+                         const Selection& sel);
 #ifdef USE_HDR
  private:
-    int sceneTexWidth, sceneTexHeight;
     GLfloat sceneTexWScale, sceneTexHScale;
     GLsizei blurBaseWidth, blurBaseHeight;
-    GLuint sceneTexture;
     Texture **blurTextures;
     Texture *blurTempTexture;
     GLuint gaussianLists[4];
@@ -603,13 +609,7 @@ class Renderer
 
     void genBlurTexture(int blurLevel);
     void genBlurTextures();
-    void genSceneTexture();
     void renderToBlurTexture(int blurLevel);
-    void renderToTexture(const Observer& observer,
-                         const Universe& universe,
-                         float faintestMagNight,
-                         const Selection& sel);
-    void drawSceneTexture();
     void drawBlur();
     void drawGaussian3x3(float xdelta, float ydelta, GLsizei width, GLsizei height, float blend);
     void drawGaussian5x5(float xdelta, float ydelta, GLsizei width, GLsizei height, float blend);
@@ -677,7 +677,7 @@ class Renderer
     bool useClampToBorder;
     unsigned int textureResolution;
     DetailOptions detailOptions;
-    
+
     bool useNewStarRendering;
 
     uint32 frameCount;
@@ -687,11 +687,11 @@ class Renderer
 
  public:
 #if 0
-    struct OrbitSample 
+    struct OrbitSample
     {
         double t;
         Point3d pos;
-        
+
         OrbitSample(const Eigen::Vector3d& _pos, double _t) : t(_t), pos(_pos.x(), _pos.y(), _pos.z()) { }
         OrbitSample() { }
     };
@@ -701,7 +701,7 @@ class Renderer
         Capsuled boundingVolume;
         uint32 firstSample;
     };
-    
+
     struct CachedOrbit
     {
         std::vector<OrbitSample> trajectory;
@@ -725,7 +725,7 @@ class Renderer
     SkyContourPoint* skyContour;
 
     const ColorTemperatureTable* colorTemp;
-    
+
     Selection highlightObject;
 
     bool videoSync;
@@ -735,7 +735,7 @@ class Renderer
     bool objectAnnotationSetOpen;
 
     double realTime;
-    
+
     // Location markers
  public:
     MarkerRepresentation mountainRep;
@@ -762,7 +762,7 @@ class Renderer
     static Color SpacecraftLabelColor;
     static Color LocationLabelColor;
     static Color GalaxyLabelColor;
-    static Color GlobularLabelColor;	    
+    static Color GlobularLabelColor;
 	static Color NebulaLabelColor;
     static Color OpenClusterLabelColor;
     static Color ConstellationLabelColor;

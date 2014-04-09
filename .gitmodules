@@ -14,3 +14,9 @@
 [submodule "libraries/glfw"]
 	path = libraries/glfw
 	url = https://github.com/jherico/glfw.git
+[submodule "libraries/gl"]
+	path = libraries/gl
+	url = https://github.com/jherico/gl
+[submodule "libraries/glm"]
+	path = libraries/glm
+	url = git@github.com:g-truc/glm.git
