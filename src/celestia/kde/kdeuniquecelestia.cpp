@@ -21,7 +21,7 @@
 #include <string>
 #include <vector>
 #include <klocale.h>
-#include <libintl.h>
+#include "celutil/intl.h"
 
 KdeUniqueCelestia::KdeUniqueCelestia() {
 

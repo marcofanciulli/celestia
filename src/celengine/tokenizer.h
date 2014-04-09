@@ -67,8 +67,8 @@ private:
         UnicodeEscapeState  = 11,
     };
 
-    istream* in;
-
+    std::string buffer;
+    int index;
     int nextChar;
     TokenType tokenType;
     bool haveValidNumber;

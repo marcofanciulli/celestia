@@ -238,10 +238,10 @@ int SDL_tolower(int x) { return ((x) >= 'A') && ((x) <= 'Z') ? ('a'+((x)-'A')) :
 
 #if defined(_MSC_VER)
 
-#ifndef __FLTUSED__
-#define __FLTUSED__
-__declspec(selectany) int _fltused = 1;
-#endif
+//#ifndef __FLTUSED__
+//#define __FLTUSED__
+//__declspec(selectany) int _fltused = 1;
+//#endif
 
 /* The optimizer on Visual Studio 2010/2012 generates memcpy() calls */
 #if _MSC_VER >= 1600 && defined(_WIN64) && !defined(_DEBUG)
@@ -334,11 +334,11 @@ localexit:
     /* *INDENT-ON* */
 }
 
-void
-_ftol2_sse()
-{
-    _ftol();
-}
+//void
+//_ftol2_sse()
+//{
+//    _ftol();
+//}
 
 /* 64-bit math operators for 32-bit systems */
 void

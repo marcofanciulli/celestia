@@ -1,4 +1,3 @@
-#include <libintl.h>
 #include <qradiobutton.h>
 #include <klistview.h>
 #include <kpopupmenu.h>
@@ -17,6 +16,7 @@
 #include "cellistviewitem.h"
 #include "selectionpopup.h"
 #include "celutil/utf8.h"
+#include "celutil/intl.h"
 
 using namespace Eigen;
 

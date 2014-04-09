@@ -13,7 +13,7 @@
 #include <iomanip>
 #include <celutil/utf8.h>
 #include "tokenizer.h"
-
+#include <sstream>
 
 static bool issep(char c)
 {
@@ -21,8 +21,19 @@ static bool issep(char c)
 }
 
 
+std::string get_contents(istream * pin)
+{
+  istream & in = *pin;
+  std::string contents;
+  in.seekg(0, std::ios::end);
+  contents.resize(in.tellg());
+  in.seekg(0, std::ios::beg);
+  in.read(&contents[0], contents.size());
+  return(contents);
+}
+
 Tokenizer::Tokenizer(istream* _in) :
-    in(_in),
+    index(0),
     tokenType(TokenBegin),
     haveValidNumber(false),
     haveValidName(false),
@@ -30,6 +41,7 @@ Tokenizer::Tokenizer(istream* _in) :
     pushedBack(false),
     lineNum(1)
 {
+    buffer = get_contents(_in);
 }
 
 
@@ -51,7 +63,7 @@ Tokenizer::TokenType Tokenizer::nextToken()
     if (tokenType == TokenBegin)
     {
         nextChar = readChar();
-        if (in->eof())
+        if (index >= buffer.size())
             return TokenEnd;
     }
     else if (tokenType == TokenEnd)
@@ -417,7 +429,7 @@ string Tokenizer::getStringValue()
 
 int Tokenizer::readChar()
 {
-    int c = (int) in->get();
+    int c = (int)buffer[index++];
     if (c == '\n')
         lineNum++;
 

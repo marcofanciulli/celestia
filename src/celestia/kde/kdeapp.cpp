@@ -17,7 +17,7 @@
 
 
 #include <GL/glew.h>
-#include <libintl.h>
+#include "celutil/intl.h"
 #include <fstream>
 #include <sstream>
 

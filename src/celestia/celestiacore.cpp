@@ -755,7 +755,7 @@ void CelestiaCore::mouseButtonUp(float x, float y, int button)
                                         (float) y / (float) height,
                                         pickX, pickY);
             Vector3f pickRay =
-                sim->getActiveObserver()->getPickRay(pickX * aspectRatio, pickY);
+                sim->getActiveObserver()->getPickRay((pickX * 2) * aspectRatio, pickY);
 
             Selection oldSel = sim->getSelection();
             Selection newSel = sim->pickObject(pickRay, renderer->getRenderFlags(), pickTolerance);
@@ -4175,49 +4175,49 @@ bool CelestiaCore::initSimulation(const string* configFileName,
     DSODatabase*     dsoDB      = new DSODatabase;
     dsoDB->setNameDatabase(dsoNameDB);
 	    
-	// Load first the vector of dsoCatalogFiles in the data directory (deepsky.dsc, globulars.dsc,...):
-	 
-	for (vector<string>::const_iterator iter = config->dsoCatalogFiles.begin();
-    iter != config->dsoCatalogFiles.end(); iter++)
-    {
-    	if (progressNotifier)
-        	progressNotifier->update(*iter);
-	
-		ifstream dsoFile(iter->c_str(), ios::in);
-        if (!dsoFile.good())
-        {
-        	cerr<< _("Error opening deepsky catalog file.") << '\n';
-            delete dsoDB;
-            return false;
-		}
-        else if (!dsoDB->load(dsoFile, ""))		
-	    {
-    		cerr << "Cannot read Deep Sky Objects database." << '\n';
-        	delete dsoDB;
-           	return false;
-        }
-    }
+	//// Load first the vector of dsoCatalogFiles in the data directory (deepsky.dsc, globulars.dsc,...):
+	// 
+	//for (vector<string>::const_iterator iter = config->dsoCatalogFiles.begin();
+ //   iter != config->dsoCatalogFiles.end(); iter++)
+ //   {
+ //   	if (progressNotifier)
+ //       	progressNotifier->update(*iter);
+	//
+	//	ifstream dsoFile(iter->c_str(), ios::in);
+ //       if (!dsoFile.good())
+ //       {
+ //       	cerr<< _("Error opening deepsky catalog file.") << '\n';
+ //           delete dsoDB;
+ //           return false;
+	//	}
+ //       else if (!dsoDB->load(dsoFile, ""))		
+	//    {
+ //   		cerr << "Cannot read Deep Sky Objects database." << '\n';
+ //       	delete dsoDB;
+ //          	return false;
+ //       }
+ //   }
 
-    // Next, read all the deep sky files in the extras directories
-    {
-        for (vector<string>::const_iterator iter = config->extrasDirs.begin();
-             iter != config->extrasDirs.end(); iter++)
-        {
-            if (*iter != "")
-            {
-                Directory* dir = OpenDirectory(*iter);
+ //   // Next, read all the deep sky files in the extras directories
+ //   {
+ //       for (vector<string>::const_iterator iter = config->extrasDirs.begin();
+ //            iter != config->extrasDirs.end(); iter++)
+ //       {
+ //           if (*iter != "")
+ //           {
+ //               Directory* dir = OpenDirectory(*iter);
 
-                DeepSkyLoader loader(dsoDB,
-                                     "deep sky object",
-                                     Content_CelestiaDeepSkyCatalog,
-                                     progressNotifier);
-                loader.pushDir(*iter);
-                dir->enumFiles(loader, true);
+ //               DeepSkyLoader loader(dsoDB,
+ //                                    "deep sky object",
+ //                                    Content_CelestiaDeepSkyCatalog,
+ //                                    progressNotifier);
+ //               loader.pushDir(*iter);
+ //               dir->enumFiles(loader, true);
 
-                delete dir;
-            }
-        }
-    }
+ //               delete dir;
+ //           }
+ //       }
+ //   }
     dsoDB->finish();
     universe->setDSOCatalog(dsoDB);
 
@@ -4247,23 +4247,23 @@ bool CelestiaCore::initSimulation(const string* configFileName,
         }
     }
 
-    // Next, read all the solar system files in the extras directories
-    {
-        for (vector<string>::const_iterator iter = config->extrasDirs.begin();
-             iter != config->extrasDirs.end(); iter++)
-        {
-            if (*iter != "")
-            {
-                Directory* dir = OpenDirectory(*iter);
+    //// Next, read all the solar system files in the extras directories
+    //{
+    //    for (vector<string>::const_iterator iter = config->extrasDirs.begin();
+    //         iter != config->extrasDirs.end(); iter++)
+    //    {
+    //        if (*iter != "")
+    //        {
+    //            Directory* dir = OpenDirectory(*iter);
 
-                SolarSystemLoader loader(universe, progressNotifier);
-                loader.pushDir(*iter);
-                dir->enumFiles(loader, true);
+    //            SolarSystemLoader loader(universe, progressNotifier);
+    //            loader.pushDir(*iter);
+    //            dir->enumFiles(loader, true);
 
-                delete dir;
-            }
-        }
-    }
+    //            delete dir;
+    //        }
+    //    }
+    //}
 
     // Load asterisms:
     if (config->asterismsFile != "")
@@ -4480,7 +4480,9 @@ bool CelestiaCore::readStars(const CelestiaConfig& cfg,
             return false;
         }
 
-        if (!starDB->loadBinary(starFile))
+        std::stringstream buffer;
+        buffer << starFile.rdbuf();
+        if (!starDB->loadBinary(buffer))
         {
             delete starDB;
             cerr << _("Error reading stars file\n");

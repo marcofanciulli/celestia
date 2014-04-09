@@ -81,71 +81,7 @@ std::ofstream hdrlog;
 #include <iomanip>
 #include "eigenport.h"
 
-#define  GLM_FORCE_RADIANS
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/type_ptr.hpp>
-#include <glm/gtc/noise.hpp>
-#include <glm/gtc/epsilon.hpp>
-#include <glm/gtx/norm.hpp>
-#include <GlDebug.h>
-#include <GlMethods.h>
-#include <GlBuffers.h>
-#include <GlFrameBuffer.h>
-#include <GlStacks.h>
-#include <GlQuery.h>
-#include <GlShaders.h>
-#include <GlGeometry.h>
-#include <GlLighting.h>
-
-enum Eye {
-  LEFT_EYE,
-  RIGHT_EYE
-};
-
-static GLuint sceneTextures[2];
-static Eye currentEye;
-float projectionOffset = 0.15;
-
-template <class T>
-void for_each_eye(T t) {
-  for (int i = 0; i < 2; ++i) {
-    currentEye = static_cast<Eye>(i);
-    t(currentEye);
-  }
-}
-
-template <class P, class M, class B>
-void with_push_matrices(P projection, M modelview, B body) {
-  glMatrixMode(GL_PROJECTION);
-  glPushMatrix();
-  projection();
-  glMatrixMode (GL_MODELVIEW);
-  glPushMatrix();
-  modelview();
-  body();
-  glMatrixMode(GL_PROJECTION);
-  glPopMatrix();
-  glMatrixMode(GL_MODELVIEW);
-  glPopMatrix();
-}
-
-template <class T>
-void with_push_matrices(T body) {
-    with_push_matrices([]{}, []{}, body);
-};
-
-template <class T>
-void with_push_attrib(GLbitfield bits, T body) {
-  glPushAttrib(bits);
-  body();
-  glPopAttrib();
-}
-
-double getAspect() {
-  return 1 + projectionOffset;
-//  return 320.0 / 480.0;
-}
+extern double getAspect();
 
 using namespace cmod;
 using namespace Eigen;
@@ -2389,48 +2325,6 @@ void Renderer::genBlurTexture(int blurLevel)
 }
 #endif
 
-void Renderer::genSceneTexture()
-{
-
-  {
-//    int newSceneTexWidth = 1;
-//    int newSceneTexHeight = 1;
-//    while (newSceneTexWidth < windowWidth)
-//      newSceneTexWidth <<= 1;
-//    while (newSceneTexHeight < windowHeight)
-//      newSceneTexHeight <<= 1;
-        int newSceneTexWidth = windowWidth;
-        int newSceneTexHeight = windowHeight;
-
-    if (newSceneTexWidth == sceneTexWidth && newSceneTexHeight == sceneTexHeight) {
-      return;
-    }
-    sceneTexWidth = newSceneTexWidth;
-    sceneTexHeight = newSceneTexHeight;
-  }
-
-  unsigned int *data;
-    data = (unsigned int* )malloc(sceneTexWidth*sceneTexHeight*4*sizeof(unsigned int));
-  memset(data, 0, sceneTexWidth*sceneTexHeight*4*sizeof(unsigned int));
-
-  for_each_eye([&](Eye eyeIndex){
-    GLuint & sceneTexture = sceneTextures[eyeIndex];
-    if (sceneTexture != 0)
-        glDeleteTextures(1, &sceneTexture);
-    glGenTextures(1, &sceneTexture);
-    glBindTexture(GL_TEXTURE_2D, sceneTexture);
-    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, sceneTexWidth, sceneTexHeight, 0,
-                 GL_RGBA, GL_UNSIGNED_BYTE, data);
-//      fb.color = gl::Texture2dPtr(new gl::Texture2d(sceneTexture));
-//      fb.init(glm::ivec2(sceneTexWidth, sceneTexHeight));
-  });
-  free(data);
-}
-
 #ifdef USE_HDR
 void Renderer::renderToBlurTexture(int blurLevel)
 {
@@ -2617,48 +2511,6 @@ void Renderer::renderToBlurTexture(int blurLevel)
 }
 #endif
 
-void Renderer::renderToTexture(const Observer& observer,
-                               const Universe& universe,
-                               float faintestMagNight,
-                               const Selection& sel)
-{
-    GLuint & sceneTexture = sceneTextures[currentEye];
-    if (sceneTexture == 0)
-        return;
-    glPushAttrib(GL_COLOR_BUFFER_BIT);
-
-    draw(observer, universe, faintestMagNight, sel);
-
-    glBindTexture(GL_TEXTURE_2D, sceneTexture);
-    glCopyTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, 0, 0,
-                     sceneTexWidth, sceneTexHeight, 0);
-    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    glPopAttrib();
-}
-
-void Renderer::drawSceneTexture()
-{
-  GLuint & sceneTexture = sceneTextures[currentEye];
-    if (sceneTexture == 0)
-        return;
-    float xl = 0, xr = 1;
-    if (LEFT_EYE == currentEye) {
-      xr -= projectionOffset;
-    } else {
-      xl += projectionOffset;
-    }
-    glBindTexture(GL_TEXTURE_2D, sceneTexture);
-    glBegin(GL_QUADS);
-    float xdelta = 0; float ydelta = 0; float blend = 1.0f;
-    glColor4f(1.0f, 1.0f, 1.0f, blend);
-    glTexCoord2f(xl, 0); glVertex2f(-1, -1);
-    glTexCoord2f(xr, 0); glVertex2f(1, -1);
-    glTexCoord2f(xr, 1); glVertex2f(1, 1);
-    glTexCoord2f(xl, 1); glVertex2f(-1, 1);
-    glEnd();
-}
-
 #ifdef USE_HDR
 void Renderer::drawBlendedVertices(float xdelta, float ydelta, float blend)
 {
@@ -2800,89 +2652,7 @@ float Renderer::getBrightness()
 }
 #endif // USE_HDR
 
-void Renderer::render(const Observer& observer,
-                      const Universe& universe,
-                      float faintestMagNight,
-                      const Selection& sel)
-{
-  for_each_eye([&](const Eye & eye){
-    glMatrixMode(GL_PROJECTION);
-    glLoadIdentity();
-    renderToTexture(observer, universe, faintestMagNight, sel);
-  });
 
-  with_push_attrib(GL_VIEWPORT_BIT | GL_ENABLE_BIT | GL_DEPTH_BUFFER_BIT, [&]{
-      glEnable(GL_TEXTURE_2D);
-      glDisable(GL_BLEND);
-      glDisable(GL_LIGHTING);
-      glDisable(GL_DEPTH_TEST);
-      glDepthMask(GL_FALSE);
-      with_push_matrices([]{
-          glLoadIdentity();
-      }, []{
-          glLoadIdentity();
-      }, [&]{
-        for_each_eye([&](const Eye & eye){
-          glViewport(LEFT_EYE == eye ? 0 : windowWidth / 2, 0, windowWidth / 2, windowHeight);
-          drawSceneTexture();
-        });
-      });
-  });
-
-
-#if 0
-#ifdef USE_HDR
-    renderToTexture(observer, universe, faintestMagNight, sel);
-
-    //------------- Post processing from here ------------//
-    glPushAttrib(GL_ENABLE_BIT | GL_DEPTH_BUFFER_BIT);
-    glEnable(GL_TEXTURE_2D);
-    glDisable(GL_BLEND);
-    glDisable(GL_LIGHTING);
-    glDisable(GL_DEPTH_TEST);
-    glDepthMask(GL_FALSE);
-
-    glMatrixMode(GL_PROJECTION);
-    glPushMatrix();
-    glLoadIdentity();
-    glOrtho( 0.0, 1.0, 0.0, 1.0, -1.0, 1.0 );
-    glMatrixMode (GL_MODELVIEW);
-    glPushMatrix();
-    glLoadIdentity();
-
-    if (bloomEnabled)
-    {
-        renderToBlurTexture(0);
-        renderToBlurTexture(1);
-//        renderToBlurTexture(2);
-    }
-
-    drawSceneTexture();
-
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_ONE, GL_ONE);
-
-#ifdef HDR_COMPRESS
-    // Assume luminance 1.0 mapped to 128 previously
-    // Compositing a 2nd copy doubles 128->255
-    drawSceneTexture();
-#endif
-
-    if (bloomEnabled)
-    {
-        drawBlur();
-    }
-
-    glMatrixMode(GL_PROJECTION);
-    glPopMatrix();
-    glMatrixMode(GL_MODELVIEW);
-    glPopMatrix();
-    glPopAttrib();
-#else
-    draw(observer, universe, faintestMagNight, sel);
-#endif
-#endif
-}
 
 void Renderer::draw(const Observer& observer,
                     const Universe& universe,

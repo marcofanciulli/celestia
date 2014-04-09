@@ -14,6 +14,7 @@ set_property(GLOBAL PROPERTY PREDEFINED_TARGETS_FOLDER "CMakeTargets")
 set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 set(CMAKE_VERBOSE_MAKEFILE ON)
 set(CMAKE_BUILD_TYPE DEBUG)
+set(BUILD_SHARED_LIBS OFF)
 
 set(TARGET_ARCHITECTURE "x64")
 if(CMAKE_COMPILER_IS_GNUCXX)
@@ -42,74 +43,49 @@ endif()
 
 add_subdirectory(libraries/cspice)
 set_target_properties(cspice PROPERTIES FOLDER "3rdparty")
-include_directories(${CMAKE_SOURCE_DIR}/libraries/cspice/include)
 list(APPEND SHARED_LIBS cspice)
 
 # Cross platform access to shader functionality
 add_definitions(-DGLEW_STATIC)
 add_subdirectory(libraries/glew)
 set_target_properties(glew PROPERTIES FOLDER "3rdparty")
-include_directories(${CMAKE_SOURCE_DIR}/libraries/glew/include)
 list(APPEND SHARED_LIBS glew)
 
-include(FindPkgConfig)
-PKG_SEARCH_MODULE(SDL2 REQUIRED sdl2)
-INCLUDE_DIRECTORIES(${SDL2_INCLUDE_DIRS})
-list(APPEND SHARED_LIBS ${SDL2_LIBRARIES})
-
-# GLFW - Cross platform OpenGL window creation and input handling
-set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "Build the GLFW example programs")
-set(GLFW_BUILD_TESTS OFF CACHE BOOL "Build the GLFW test programs")
-set(GLFW_BUILD_DOCS OFF CACHE BOOL "Build the GLFW documentation")
-set(GLFW_INSTALL OFF CACHE BOOL "Generate installation target")
-add_subdirectory(libraries/glfw)
-set_target_properties(glfw PROPERTIES FOLDER "3rdparty")
-include_directories(${CMAKE_SOURCE_DIR}/libraries/glfw/include)
-list(APPEND EXAMPLE_LIBS glfw ${GLFW_LIBRARIES})
-
-include_directories(${CMAKE_SOURCE_DIR}/libraries/Eigen)
-
-add_subdirectory(libraries/curveplot)
-set_target_properties(curveplot PROPERTIES FOLDER "3rdparty")
-include_directories(${CMAKE_SOURCE_DIR}/libraries/curveplot/include)
-list(APPEND SHARED_LIBS curveplot)
-
-find_package(Lua51 REQUIRED) 
-include_directories(${LUA_INCLUDE_DIR})
-list(APPEND SHARED_LIBS ${LUA_LIBRARIES})
-add_definitions(-DLUA_VER=0x050100)
-
-#get_cmake_property(_variableNames VARIABLES)
-#foreach (_variableName ${_variableNames})
-#    message(STATUS "${_variableName}=${${_variableName}}")
-#endforeach()
-
 find_package(OpenGL REQUIRED) 
-#include_directories(${LUA_INCLUDE_DIR})
 list(APPEND SHARED_LIBS ${OPENGL_LIBRARIES})
 
-#message(STATUS ${SHARED_LIBS})
-# GLFW - Cross platform OpenGL window creation and input handling
-#set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "Build the GLFW example programs")
-#set(GLFW_BUILD_TESTS OFF CACHE BOOL "Build the GLFW test programs")
-#set(GLFW_BUILD_DOCS OFF CACHE BOOL "Build the GLFW documentation")
-#set(GLFW_INSTALL OFF CACHE BOOL "Generate installation target")
-#add_subdirectory(libraries/glfw)
-#set_target_properties(glfw PROPERTIES FOLDER "3rdparty")
-#include_directories(${CMAKE_SOURCE_DIR}/libraries/glfw/include)
-#list(APPEND SHARED_LIBS glfw ${GLFW_LIBRARIES})
-
-# Without OpenCV, we have to fall back on libpng
-# which requires zlib.  For windows and apple we
-# build the library.  For Unix systems we locate 
-# the native package
 if((WIN32 OR APPLE))
+    set(SDL_SHARED OFF CACHE BOOL "don't build shared library")
+    add_subdirectory(libraries/sdl2)
+    list(APPEND SHARED_LIBS SDL2-static)
+    list(APPEND SHARED_LIBS SDL2main)
+    set_target_properties(SDL2-static PROPERTIES FOLDER "3rdparty/SDL")
+    set_target_properties(SDL2main PROPERTIES FOLDER "3rdparty/SDL")
+    
+    add_subdirectory(libraries/lua)
+    set_target_properties(liblua PROPERTIES FOLDER "3rdparty")
+    list(APPEND SHARED_LIBS liblua)
+    add_definitions(-DLUA_VER=0x050100)
+
+    if (WIN32)
+        set(SIZEOF_VOIDP ${CMAKE_SIZEOF_VOID_P})
+        if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+          set(ARCH_64 TRUE)
+          set(PROCESSOR_ARCH "x64")
+        else()
+          set(ARCH_64 FALSE)
+          set(PROCESSOR_ARCH "x86")
+        endif()
+        link_directories($ENV{DXSDK_DIR}\\lib\\${PROCESSOR_ARCH})
+    endif()
+
     # zlib
     add_subdirectory(libraries/zlib)
     set(ZLIB_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/libraries/zlib)
     include_directories(${CMAKE_BINARY_DIR}/libraries/zlib)
     include_directories(${CMAKE_SOURCE_DIR}/libraries/zlib)
     list(APPEND SHARED_LIBS zlib)
+    set_target_properties(zlib PROPERTIES FOLDER "3rdparty")
 
     # png
     set(PNG_STATIC ON CACHE BOOL "Build PNG static library")
@@ -119,8 +95,17 @@ if((WIN32 OR APPLE))
     include_directories(${CMAKE_SOURCE_DIR}/libraries/libpng)
     include_directories(${CMAKE_BINARY_DIR}/libraries/libpng)
     list(APPEND SHARED_LIBS png)
-    set_target_properties(zlib PROPERTIES FOLDER "3rdparty")
     set_target_properties(png PROPERTIES FOLDER "3rdparty")
+
+    add_subdirectory(libraries/libjpeg)
+    include_directories(${CMAKE_SOURCE_DIR}/libraries/libjpeg)
+    include_directories(${CMAKE_BINARY_DIR}/libraries/libjpeg)
+    list(APPEND SHARED_LIBS jpeg)
+    set_target_properties(jpeg PROPERTIES FOLDER "3rdparty")
+
+    include_directories(${CMAKE_SOURCE_DIR}/windows)
+
+
 else()
     find_package(JPEG REQUIRED)
     include_directories(${JPEG_INCLUDE_DIR})
@@ -130,7 +115,36 @@ else()
     list(APPEND SHARED_LIBS ${PNG_LIBRARIES})
 endif()
 
-include_directories(${CMAKE_SOURCE_DIR}/libraries/glm)
-include_directories(${CMAKE_SOURCE_DIR}/libraries/gl)
+include_directories(${CMAKE_SOURCE_DIR}/libraries/Eigen)
+include_directories(${CMAKE_SOURCE_DIR}/libraries/glew/include)
+
+add_subdirectory(libraries/curveplot)
+set_target_properties(curveplot PROPERTIES FOLDER "3rdparty")
+list(APPEND SHARED_LIBS curveplot)
+
+# Add debug output from the Oculus SDK
+add_definitions(-DOVR_BUILD_DEBUG)
+
+# The primary SDK artifact, a static library for Oculus access 
+add_subdirectory(libraries/OculusSDK/LibOVR)
+set_target_properties(OculusVR PROPERTIES FOLDER "3rdparty")
+list(APPEND SHARED_LIBS OculusVR)
+ 
+# Make sure to set up the OVR include paths
+include_directories(libraries/OculusSDK/LibOVR/Include)
+include_directories(libraries/OculusSDK/LibOVR/Src)
+include_directories(libraries/OculusSDK/LibOVR/Src/Kernel)
+include_directories(libraries/OculusSDK/LibOVR/Src/Util)
+
+include_directories(libraries/glm)
+include_directories(libraries/gl)
+
+include_directories(${CMAKE_BINARY_DIR}/libraries/lua)
+include_directories(${CMAKE_SOURCE_DIR}/libraries/lua/src)
+include_directories(${CMAKE_SOURCE_DIR}/libraries/lua/etc)
+include_directories(${CMAKE_SOURCE_DIR}/libraries/sdl2/include)
+include_directories(${CMAKE_SOURCE_DIR}/libraries/cspice/include)
+include_directories(${CMAKE_SOURCE_DIR}/libraries/curveplot/include)
+
 add_subdirectory(src)
 

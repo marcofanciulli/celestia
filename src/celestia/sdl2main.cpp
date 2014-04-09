@@ -10,6 +10,10 @@
 // of the License, or (at your option) any later version.
 
 #include <SDL.h>
+#include <OVR.h>
+#undef new
+#undef min
+#undef max
 #include <iostream>
 #include <fstream>
 #include <algorithm>
@@ -17,12 +21,12 @@
 #include <cctype>
 #include <cstring>
 #include <time.h>
-#include <unistd.h>
 #include <celengine/celestia.h>
 #include <celmath/vecmath.h>
 #include <celmath/quaternion.h>
 #include <celutil/util.h>
 #include <celutil/debug.h>
+#include <celutil/directory.h>
 #include <celmath/mathlib.h>
 #include <celengine/astro.h>
 #include "celestiacore.h"
@@ -34,7 +38,7 @@ using namespace std;
 
 char AppName[] = "Celestia";
 #ifndef CONFIG_DATA_DIR
-#define CONFIG_DATA_DIR "/home/local/ANT/bradd/git/celestia"
+#define CONFIG_DATA_DIR "/Users/bdavis/git/celestia"
 #endif
 
 static CelestiaCore* appCore = NULL;
@@ -43,10 +47,6 @@ SDL_GLContext sdlGlContext = NULL;
 //static bool fullscreen = false;
 static bool ready = false;
 static bool quit = false;
-
-static void Resize(int w, int h) {
-  appCore->resize(w, h);
-}
 
 void onMouseButton(const SDL_MouseButtonEvent & event) {
   int x = event.x, y = event.y;
@@ -175,22 +175,16 @@ void onKeyboardEvent(const SDL_KeyboardEvent & event) {
 void onWindowEvent(const SDL_WindowEvent & event) {
   switch (event.event) {
   case SDL_WINDOWEVENT_RESIZED:
-    //  glutReshapeFunc(Resize);
-    Resize(event.data1, event.data2);
-    SDL_Log("Window %d resized to %dx%d", event.windowID, event.data1,
-        event.data2);
+    appCore->resize(event.data1, event.data2);
     break;
   case SDL_WINDOWEVENT_MINIMIZED:
     ready = false;
-    SDL_Log("Window %d minimized", event.windowID);
     break;
   case SDL_WINDOWEVENT_MAXIMIZED:
     ready = true;
-    SDL_Log("Window %d maximized", event.windowID);
     break;
   case SDL_WINDOWEVENT_RESTORED:
     ready = true;
-    SDL_Log("Window %d restored", event.windowID);
     break;
   case SDL_WINDOWEVENT_CLOSE:
     quit = true;
@@ -198,7 +192,48 @@ void onWindowEvent(const SDL_WindowEvent & event) {
   }
 }
 
+OVR::Ptr<OVR::DeviceManager> ovrManager;
+OVR::Ptr<OVR::SensorDevice> ovrSensor;
+OVR::SensorFusion * ovrSensorFusion;
+OVR::HMDInfo ovrHmdInfo;
+OVR::Util::Render::StereoConfig ovrStereoConfig; 
+
+class SimpleNotifier : public ProgressNotifier {
+  long start{ 0 };
+  void update(const std::string& s) {
+    long now = GetTickCount();
+    if (start != 0) {
+      long elapsed = now - start;
+      cout << elapsed << " ms" << endl;
+    }
+    start = now;
+    cout << s << " ... ";
+  }
+};
+
 int main(int argc, char* argv[]) {
+  OVR::System::Init();
+
+  ovrManager = *OVR::DeviceManager::Create();
+  {
+    OVR::Ptr<OVR::HMDDevice> ovrHmd = *ovrManager->EnumerateDevices<OVR::HMDDevice>().CreateDevice();
+    if (ovrHmd) {
+      ovrHmd->GetDeviceInfo(&ovrHmdInfo);
+      ovrSensor = *ovrHmd->GetSensor();
+    }
+  }
+
+  ovrStereoConfig.SetHMDInfo(ovrHmdInfo);
+  if (!ovrSensor) {
+    ovrSensor = *ovrManager->EnumerateDevices<OVR::SensorDevice>().CreateDevice();
+  }
+
+  if (ovrSensor) {
+    ovrSensorFusion = new OVR::SensorFusion();
+    ovrSensorFusion->AttachToSensor(ovrSensor);
+  }
+
+
   setlocale(LC_ALL, "");
   setlocale(LC_NUMERIC, "C");
   fprintf(stdout, "\nDone\n", SDL_GetError());
@@ -207,7 +242,7 @@ int main(int argc, char* argv[]) {
 //  bind_textdomain_codeset(PACKAGE, "UTF-8");
 //  textdomain (PACKAGE);
 
-  if (chdir(CONFIG_DATA_DIR) == -1) {
+  if (Directory::chdir(CONFIG_DATA_DIR) == -1) {
     cerr << "Cannot chdir to '" << CONFIG_DATA_DIR
         << "', probably due to improper installation\n";
   }
@@ -215,21 +250,21 @@ int main(int argc, char* argv[]) {
   ready = false;
   char c;
   int startfile = 0;
-  while ((c = getopt(argc, argv, "v::f")) > -1) {
-    if (c == '?') {
-      cout << "Usage: celestia [-v] [-f <filename>]\n";
-      exit(1);
-    }
-    else if (c == 'v') {
-      if (optarg)
-        SetDebugVerbosity(atoi(optarg));
-      else
-        SetDebugVerbosity(0);
-    }
-    else if (c == 'f') {
-      startfile = 1;
-    }
-  }
+  //while ((c = getopt(argc, argv, "v::f")) > -1) {
+  //  if (c == '?') {
+  //    cout << "Usage: celestia [-v] [-f <filename>]\n";
+  //    exit(1);
+  //  }
+  //  else if (c == 'v') {
+  //    if (optarg)
+  //      SetDebugVerbosity(atoi(optarg));
+  //    else
+  //      SetDebugVerbosity(0);
+  //  }
+  //  else if (c == 'f') {
+  //    startfile = 1;
+  //  }
+  //}
 
   appCore = new CelestiaCore();
   if (appCore == NULL) {
@@ -237,31 +272,29 @@ int main(int argc, char* argv[]) {
     return 1;
   }
 
-  if (!appCore->initSimulation()) {
+  if (!appCore->initSimulation(NULL, NULL, &SimpleNotifier())) {
     return 1;
   }
+  appCore->getSimulation()->getActiveObserver()->setFOV(ovrStereoConfig.GetYFOVDegrees());
 
-  //  glutInit(&argc, argv);
   if (0 != SDL_Init(SDL_INIT_EVERYTHING)) {
     cerr << endl << "Unable to initialize SDL:  " << SDL_GetError()
         << endl;
     return 1;
   }
-  //  glutInitDisplayMode(GLUT_RGB | GLUT_DOUBLE | GLUT_DEPTH);
   SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
   SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
 
-  //  glutInitWindowPosition(0, 0);
-  //  glutInitWindowSize(480, 360);
-  //  mainWindow = glutCreateWindow("Celestia");
   sdlWindow = SDL_CreateWindow(AppName,
-  SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 480, 360,
-      SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
-
-  //  Resize(480, 360);
-  Resize(480, 360);
+      ovrHmdInfo.DesktopX, ovrHmdInfo.DesktopY,
+      ovrHmdInfo.HResolution, ovrHmdInfo.VResolution,
+      SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN | SDL_WINDOW_BORDERLESS);
+//  SDL_SetWindowPosition();
+  appCore->resize(ovrHmdInfo.HResolution, ovrHmdInfo.VResolution);
   sdlGlContext = SDL_GL_CreateContext(sdlWindow);
   SDL_GL_SetSwapInterval(1);
+  glewExperimental = GL_TRUE;
+  GLenum glewErr = glewInit();
 
   // GL should be all set up, now initialize the renderer.
   appCore->initRenderer();
@@ -319,7 +352,7 @@ int main(int argc, char* argv[]) {
   SDL_Quit();
   delete appCore;
   appCore = NULL;
-
+  OVR::System::Destroy();
   return 0;
 }
 

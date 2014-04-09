@@ -16,7 +16,7 @@
  ***************************************************************************/
 
 
-#include <libintl.h>
+#include "celutil/intl.h"
 #include <sstream>
 #include <fstream>
 #include <algorithm>

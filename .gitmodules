@@ -25,3 +25,6 @@
 [submodule "libraries/lua"]
 	path = libraries/lua
 	url = git@github.com:LuaDist/lua.git
+[submodule "libraries/OculusSDK"]
+	path = libraries/OculusSDK
+	url = git@github.com:jherico/OculusSDK.git

@@ -26,6 +26,7 @@ list(REMOVE_ITEM SOURCE_FILES ${CMAKE_CURRENT_SOURCE_DIR}/celutil/winutil.cpp)
 
 #message(FATAL_ERROR ${SOURCE_FILES})
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
+add_definitions(-DCELX)
 add_executable(celestia ${SOURCE_FILES})
 target_link_libraries(celestia ${SHARED_LIBS})
 

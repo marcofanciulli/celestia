@@ -1,4 +1,4 @@
-#include <libintl.h>
+#include "celutil/intl.h"
 #include <klocale.h>
 #include <qstatusbar.h>
 #include <qdatetime.h>

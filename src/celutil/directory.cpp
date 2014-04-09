@@ -8,6 +8,7 @@
 // of the License, or (at your option) any later version.
 #ifdef WIN32
 #include <windows.h>
+#include <direct.h>
 #else
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -192,6 +193,10 @@ bool IsDirectory(const std::string& filename)
 
 std::string WordExp(const std::string& filename) {
     return filename;
+}
+
+int Directory::chdir(const std::string & dir) {
+  return _chdir(dir.c_str());
 }
 #else
 

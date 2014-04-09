@@ -38,6 +38,7 @@ class Directory
     virtual bool nextFile(std::string&) = 0;
 
     virtual bool enumFiles(EnumFilesHandler& handler, bool deep);
+    static int chdir(const std::string & dir);
 };
 
 extern std::string WordExp(const std::string&);
