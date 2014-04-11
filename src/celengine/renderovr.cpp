@@ -400,16 +400,16 @@ void Renderer::render(const Observer& observer,
     riftObserver.setFOV(ovrStereoConfig.GetYFOVRadians());
     Quaterniond orientation = riftObserver.getOrientation();
     riftObserver.setOrientation(riftOrientation.inverse() * orientation);
-    UniversalCoord pos = observer.getPosition();
-    UniversalCoord trackedPos = observer.getTrackedObject().getPosition(observer.getTime());
-    double distance = pos.distanceTo(trackedPos);
-    Vector3d offset(distance / 10.0, 0, 0);
-    offset = observer.getOrientation() * offset;
-    if (eye == LEFT_EYE) {
-      offset = -1 * offset;
-    }
-    pos = pos + Point3d(offset.x(), offset.y(), offset.z());
-    riftObserver.setPosition(pos);
+    //UniversalCoord pos = observer.getPosition();
+    //UniversalCoord trackedPos = observer.getTrackedObject().getPosition(observer.getTime());
+    //double distance = pos.distanceTo(trackedPos);
+    //Vector3d offset(distance / 10.0, 0, 0);
+    //offset = observer.getOrientation() * offset;
+    //if (eye == LEFT_EYE) {
+    //  offset = -1 * offset;
+    //}
+    //pos = pos + Point3d(offset.x(), offset.y(), offset.z());
+    //riftObserver.setPosition(pos);
     renderToTexture(riftObserver, universe, faintestMagNight, sel);
   });
 
