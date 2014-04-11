@@ -429,6 +429,9 @@ string Tokenizer::getStringValue()
 
 int Tokenizer::readChar()
 {
+    if (buffer.size() <= index) {
+      return -1;
+    }
     int c = (int)buffer[index++];
     if (c == '\n')
         lineNum++;

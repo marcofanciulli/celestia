@@ -1,5 +1,5 @@
 // directory.h
-// 
+//
 // Copyright (C) 2003, Chris Laurel <claurel@shatters.net>
 //
 // This program is free software; you can redistribute it and/or
@@ -266,6 +266,10 @@ bool UnixDirectory::nextFile(std::string& filename)
     }
 }
 
+
+int Directory::chdir(const std::string & dir) {
+  return ::chdir(dir.c_str());
+}
 
 Directory* OpenDirectory(const std::string& dirname)
 {

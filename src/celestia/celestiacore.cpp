@@ -1030,7 +1030,7 @@ void CelestiaCore::pickView(float x, float y)
         {
                 activeView++;
         }
-        
+
         // Make sure that we're left with a valid view
         if (activeView == views.end())
         {
@@ -1476,7 +1476,7 @@ void CelestiaCore::charEntered(const char *c_p, int modifiers)
                 MarkerRepresentation markerRep(MarkerRepresentation::Diamond);
                 markerRep.setSize(10.0f);
                 markerRep.setColor(Color(0.0f, 1.0f, 0.0f, 0.9f));
-    
+
                 sim->getUniverse()->markObject(sel, markerRep, 1);
             }
         }
@@ -1878,7 +1878,7 @@ void CelestiaCore::charEntered(const char *c_p, int modifiers)
 		if (c == 'e')
 			renderer->setLabelMode(renderer->getLabelMode() ^ Renderer::GalaxyLabels);
 		else
-        	renderer->setLabelMode(renderer->getLabelMode() ^ Renderer::GlobularLabels);		
+        	renderer->setLabelMode(renderer->getLabelMode() ^ Renderer::GlobularLabels);
         notifyWatchers(LabelFlagsChanged);
 		break;
 
@@ -2696,7 +2696,7 @@ void CelestiaCore::setFOVFromZoom()
         if ((*i)->type == View::ViewWindow)
         {
             double fov = 2 * atan(height * (*i)->height / (screenDpi / 25.4) / 2. / distanceToScreen) / (*i)->zoom;
-            (*i)->observer->setFOV((float) fov);
+//            (*i)->observer->setFOV((float) fov);
         }
 }
 
@@ -2705,7 +2705,7 @@ void CelestiaCore::setZoomFromFOV()
     for (list<View*>::iterator i = views.begin(); i != views.end(); i++)
         if ((*i)->type == View::ViewWindow)
         {
-            (*i)->zoom = (float) (2 * atan(height * (*i)->height / (screenDpi / 25.4) / 2. / distanceToScreen) /  (*i)->observer->getFOV());
+//            (*i)->zoom = (float) (2 * atan(height * (*i)->height / (screenDpi / 25.4) / 2. / distanceToScreen) /  (*i)->observer->getFOV());
         }
 }
 
@@ -3083,7 +3083,7 @@ static void displayPlanetocentricCoords(Overlay& overlay,
             nsHemi = 'S';
         else if ((latitude > 0.0) ^ retrograde)
             nsHemi = 'N';
-        
+
         if (retrograde)
             ewHemi = 'E';
         else
@@ -3182,7 +3182,7 @@ static void displayStarInfo(Overlay& overlay,
 
         }
     }
-    
+
     if (detail > 1)
     {
         SolarSystem* sys = universe.getSolarSystem(&star);
@@ -3434,7 +3434,7 @@ void CelestiaCore::renderOverlay()
     if (hudDetail > 0 && (overlayElements & ShowTime))
     {
         double lt = 0.0;
- 
+
         if (sim->getSelection().getType() == Selection::Type_Body &&
             (sim->getTargetSpeed() < 0.99 * astro::speedOfLight))
         {
@@ -3465,6 +3465,11 @@ void CelestiaCore::renderOverlay()
         overlay->beginText();
 
         overlay->print(dateStr);
+
+        View * v = *activeView;
+
+        *overlay << "\nzoom: " << v->zoom << "\n";
+
 
         if (lightTravelFlag && lt > 0.0)
         {
@@ -3755,7 +3760,7 @@ void CelestiaCore::renderOverlay()
 	          break;
         }
 
-        
+
         // Display RA/Dec for the selection, but only when the observer is near
         // the Earth.
         Selection refObject = sim->getFrame()->getRefObject();
@@ -4174,50 +4179,47 @@ bool CelestiaCore::initSimulation(const string* configFileName,
     DSONameDatabase* dsoNameDB  = new DSONameDatabase;
     DSODatabase*     dsoDB      = new DSODatabase;
     dsoDB->setNameDatabase(dsoNameDB);
-	    
-	//// Load first the vector of dsoCatalogFiles in the data directory (deepsky.dsc, globulars.dsc,...):
-	// 
-	//for (vector<string>::const_iterator iter = config->dsoCatalogFiles.begin();
- //   iter != config->dsoCatalogFiles.end(); iter++)
- //   {
- //   	if (progressNotifier)
- //       	progressNotifier->update(*iter);
-	//
-	//	ifstream dsoFile(iter->c_str(), ios::in);
- //       if (!dsoFile.good())
- //       {
- //       	cerr<< _("Error opening deepsky catalog file.") << '\n';
- //           delete dsoDB;
- //           return false;
-	//	}
- //       else if (!dsoDB->load(dsoFile, ""))		
-	//    {
- //   		cerr << "Cannot read Deep Sky Objects database." << '\n';
- //       	delete dsoDB;
- //          	return false;
- //       }
- //   }
 
- //   // Next, read all the deep sky files in the extras directories
- //   {
- //       for (vector<string>::const_iterator iter = config->extrasDirs.begin();
- //            iter != config->extrasDirs.end(); iter++)
- //       {
- //           if (*iter != "")
- //           {
- //               Directory* dir = OpenDirectory(*iter);
+  // Load first the vector of dsoCatalogFiles in the data directory (deepsky.dsc, globulars.dsc,...):
+  for (vector<string>::const_iterator iter =
+      config->dsoCatalogFiles.begin();
+      iter != config->dsoCatalogFiles.end(); iter++) {
+    if (progressNotifier)
+      progressNotifier->update(*iter);
 
- //               DeepSkyLoader loader(dsoDB,
- //                                    "deep sky object",
- //                                    Content_CelestiaDeepSkyCatalog,
- //                                    progressNotifier);
- //               loader.pushDir(*iter);
- //               dir->enumFiles(loader, true);
+    ifstream dsoFile(iter->c_str(), ios::in);
+    if (!dsoFile.good()) {
+      cerr << _("Error opening deepsky catalog file.") << '\n';
+      delete dsoDB;
+      return false;
+    }
+    else if (!dsoDB->load(dsoFile, "")) {
+      cerr << "Cannot read Deep Sky Objects database." << '\n';
+      delete dsoDB;
+      return false;
+    }
+  }
 
- //               delete dir;
- //           }
- //       }
- //   }
+    // Next, read all the deep sky files in the extras directories
+    {
+        for (vector<string>::const_iterator iter = config->extrasDirs.begin();
+             iter != config->extrasDirs.end(); iter++)
+        {
+            if (*iter != "")
+            {
+                Directory* dir = OpenDirectory(*iter);
+
+                DeepSkyLoader loader(dsoDB,
+                                     "deep sky object",
+                                     Content_CelestiaDeepSkyCatalog,
+                                     progressNotifier);
+                loader.pushDir(*iter);
+                dir->enumFiles(loader, true);
+
+                delete dir;
+            }
+        }
+    }
     dsoDB->finish();
     universe->setDSOCatalog(dsoDB);
 
@@ -4247,23 +4249,23 @@ bool CelestiaCore::initSimulation(const string* configFileName,
         }
     }
 
-    //// Next, read all the solar system files in the extras directories
-    //{
-    //    for (vector<string>::const_iterator iter = config->extrasDirs.begin();
-    //         iter != config->extrasDirs.end(); iter++)
-    //    {
-    //        if (*iter != "")
-    //        {
-    //            Directory* dir = OpenDirectory(*iter);
+    // Next, read all the solar system files in the extras directories
+    {
+        for (vector<string>::const_iterator iter = config->extrasDirs.begin();
+             iter != config->extrasDirs.end(); iter++)
+        {
+            if (*iter != "")
+            {
+                Directory* dir = OpenDirectory(*iter);
 
-    //            SolarSystemLoader loader(universe, progressNotifier);
-    //            loader.pushDir(*iter);
-    //            dir->enumFiles(loader, true);
+                SolarSystemLoader loader(universe, progressNotifier);
+                loader.pushDir(*iter);
+                dir->enumFiles(loader, true);
 
-    //            delete dir;
-    //        }
-    //    }
-    //}
+                delete dir;
+            }
+        }
+    }
 
     // Load asterisms:
     if (config->asterismsFile != "")
@@ -4879,7 +4881,7 @@ void CelestiaCore::toggleReferenceMark(const string& refMark, Selection sel)
         body = getSimulation()->getSelection().body();
     else
         body = sel.body();
-    
+
     // Reference marks can only be set for solar system bodies.
     if (body == NULL)
         return;
@@ -4957,7 +4959,7 @@ bool CelestiaCore::referenceMarkEnabled(const string& refMark, Selection sel) co
         body = getSimulation()->getSelection().body();
     else
         body = sel.body();
-    
+
     // Reference marks can only be set for solar system bodies.
     if (body == NULL)
         return false;

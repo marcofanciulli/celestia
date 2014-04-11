@@ -37,9 +37,7 @@
 using namespace std;
 
 char AppName[] = "Celestia";
-#ifndef CONFIG_DATA_DIR
-#define CONFIG_DATA_DIR "/Users/bdavis/git/celestia"
-#endif
+std::string CONFIG_DATA_DIR;
 
 static CelestiaCore* appCore = NULL;
 SDL_Window* sdlWindow = NULL;
@@ -95,24 +93,80 @@ void onMouseMotion(const SDL_MouseMotionEvent & event) {
   }
 }
 
+static char keycharForKeyEvent(const SDL_KeyboardEvent & event) {
+  if (event.keysym.sym & SDLK_SCANCODE_MASK) {
+    return SDLK_UNKNOWN;
+  }
+  if (event.keysym.mod & KMOD_CTRL) {
+    switch(event.keysym.sym) {
+      case SDLK_a:
+        return '\001'; // Ctrl+A
+      case SDLK_b:
+        return '\002'; // Ctrl+B
+      case SDLK_l:
+        return '\014'; // Ctrl+L
+      case SDLK_k:
+        return '\013'; // Ctrl+K
+      case SDLK_e:
+        return '\005';  // Ctrl+E
+      case SDLK_g:
+        return '\007';  // Ctrl+G
+      case SDLK_f:
+        return '\006'; // Ctrl+F
+      case SDLK_p:
+        return '\020';  // Ctrl+P
+      case SDLK_u:
+        return '\025'; // Ctrl+U
+      case SDLK_r:
+        return '\022'; // Ctrl+R
+      case SDLK_d:
+        return '\004'; // Ctrl+D
+      case SDLK_q:
+        return '\021';  // Ctrl+Q
+      case SDLK_s:
+        return '\023';  // Ctrl+S
+      case SDLK_t:
+        return '\024';  // Ctrl+T
+      case SDLK_v:
+        return '\026';  // Ctrl+V
+      case SDLK_w:
+        return '\027';  // Ctrl+W
+      case SDLK_x:
+        return '\030';  // Ctrl+X
+      case SDLK_y:
+        return '\031';  // Ctrl+Y
+      default:
+        return SDLK_UNKNOWN;
+    }
+  }
+  switch (event.keysym.sym) {
+  case SDLK_DELETE:
+    return 127; // Delete
+  case SDLK_TAB:
+    return '\011'; // TAB
+  default:
+    return event.keysym.sym;
+  }
+}
+
+
 void onKeyboardEvent(const SDL_KeyboardEvent & event) {
   const SDL_Keysym & key = event.keysym;
   bool down = event.type == SDL_KEYDOWN;
-
+  char c = keycharForKeyEvent(event);
   // Non-'special' keys
-  if (0 == (SDLK_SCANCODE_MASK & key.sym)) {
+  if (c) {
+    if ('\021' == c) {
+      quit = true;
+      return;
+    }
+
     if (down) {
-      bool ctrl = 0 != (KMOD_CTRL & key.mod);
-      if ((SDLK_q == key.sym) && ctrl) {
-        quit = true;
-      }
-      else {
-        appCore->charEntered((char) key.sym);
-      }
+      appCore->charEntered(c);
+    } else {
+      appCore->keyUp(c);
     }
-    else {
-      appCore->keyUp(key.sym);
-    }
+
     return;
   }
 
@@ -196,17 +250,16 @@ OVR::Ptr<OVR::DeviceManager> ovrManager;
 OVR::Ptr<OVR::SensorDevice> ovrSensor;
 OVR::SensorFusion * ovrSensorFusion;
 OVR::HMDInfo ovrHmdInfo;
-OVR::Util::Render::StereoConfig ovrStereoConfig; 
+OVR::Util::Render::StereoConfig ovrStereoConfig;
 
 class SimpleNotifier : public ProgressNotifier {
-  long start{ 0 };
+  Timer * timer;
+public:
+  SimpleNotifier() : timer(CreateTimer()) {
+  }
   void update(const std::string& s) {
-    long now = GetTickCount();
-    if (start != 0) {
-      long elapsed = now - start;
-      cout << elapsed << " ms" << endl;
-    }
-    start = now;
+    cout << timer->getTime() << endl;
+    timer->reset();
     cout << s << " ... ";
   }
 };
@@ -220,6 +273,25 @@ int main(int argc, char* argv[]) {
     if (ovrHmd) {
       ovrHmd->GetDeviceInfo(&ovrHmdInfo);
       ovrSensor = *ovrHmd->GetSensor();
+    } else {
+        ovrHmdInfo.HResolution = 1280;
+        ovrHmdInfo.VResolution = 800;
+        ovrHmdInfo.HScreenSize = 0.14976f;
+        ovrHmdInfo.VScreenSize = 0.09360f;
+        ovrHmdInfo.VScreenCenter = 0.04680f;
+        ovrHmdInfo.EyeToScreenDistance = 0.04100f;
+        ovrHmdInfo.LensSeparationDistance = 0.06350f;
+        ovrHmdInfo.InterpupillaryDistance = 0.06400f;
+        ovrHmdInfo.DistortionK[0] = 1;
+        ovrHmdInfo.DistortionK[1] = 0.22f;
+        ovrHmdInfo.DistortionK[2] = 0.24f;
+        ovrHmdInfo.DistortionK[3] = 0;
+        ovrHmdInfo.DesktopX = 100;
+        ovrHmdInfo.DesktopY = 100;
+        ovrHmdInfo.ChromaAbCorrection[0] = 0.99600f;
+        ovrHmdInfo.ChromaAbCorrection[1] = -0.00400f;
+        ovrHmdInfo.ChromaAbCorrection[2] = 1.01400f;
+        ovrHmdInfo.ChromaAbCorrection[3] = 0;
     }
   }
 
@@ -228,8 +300,8 @@ int main(int argc, char* argv[]) {
     ovrSensor = *ovrManager->EnumerateDevices<OVR::SensorDevice>().CreateDevice();
   }
 
+  ovrSensorFusion = new OVR::SensorFusion();
   if (ovrSensor) {
-    ovrSensorFusion = new OVR::SensorFusion();
     ovrSensorFusion->AttachToSensor(ovrSensor);
   }
 
@@ -242,6 +314,7 @@ int main(int argc, char* argv[]) {
 //  bind_textdomain_codeset(PACKAGE, "UTF-8");
 //  textdomain (PACKAGE);
 
+  CONFIG_DATA_DIR = getenv("CELESTIA_HOME");
   if (Directory::chdir(CONFIG_DATA_DIR) == -1) {
     cerr << "Cannot chdir to '" << CONFIG_DATA_DIR
         << "', probably due to improper installation\n";
@@ -271,8 +344,9 @@ int main(int argc, char* argv[]) {
     cerr << "Out of memory.\n";
     return 1;
   }
+  static SimpleNotifier notifier;
 
-  if (!appCore->initSimulation(NULL, NULL, &SimpleNotifier())) {
+  if (!appCore->initSimulation(NULL, NULL, &notifier)) {
     return 1;
   }
   appCore->getSimulation()->getActiveObserver()->setFOV(ovrStereoConfig.GetYFOVDegrees());
@@ -352,6 +426,8 @@ int main(int argc, char* argv[]) {
   SDL_Quit();
   delete appCore;
   appCore = NULL;
+  delete ovrSensorFusion;
+  ovrManager.Clear();
   OVR::System::Destroy();
   return 0;
 }

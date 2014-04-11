@@ -347,7 +347,7 @@ using namespace std;
 #endif
 
 const string WARP_FS = " \
-#version 330 \n\
+#version 130 \n\
 uniform sampler2D Scene; \
 uniform sampler2D OffsetMap; \
 uniform float DistortionOffset; \
@@ -369,12 +369,13 @@ void main() { \
   vFragColor = texture(Scene, undistorted); \
 }";
 
+
 const string WARP_VS = "\
-#version 330 \n\
+#version 130 \n\
 uniform mat4 Projection = mat4(1); \
 uniform mat4 ModelView = mat4(1); \
-layout(location = 0) in vec4 Position; \
-layout(location = 1) in vec2 TexCoord0; \
+in vec4 Position; \
+in vec2 TexCoord0; \
 out vec2 vTexCoord; \
 void main() { \
   gl_Position = Projection * ModelView * Position; \
@@ -414,8 +415,9 @@ void Renderer::render(const Observer& observer,
   });
 
 
+  glClearColor(0.0f, 0.5f, 0.0f, 1.0f);
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   glDisable(GL_DEPTH_TEST);
-
   with_push_attrib(GL_VIEWPORT_BIT | GL_ENABLE_BIT | GL_DEPTH_BUFFER_BIT, [&]{
     glEnable(GL_TEXTURE_2D);
     glDisable(GL_BLEND);
@@ -434,8 +436,10 @@ void Renderer::render(const Observer& observer,
         glActiveTexture(GL_TEXTURE1);
         distortionTextures[eye]->bind();
         glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, sceneTextures[eye]);
         quadGeometry->bindVertexArray();
         quadGeometry->draw();
+        glBindTexture(GL_TEXTURE_2D, 0);
         gl::VertexArray::unbind();
         gl::Program::clear();
       });
